@@ -20,28 +20,38 @@ export default function HeroSection() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const heroRef = useRef<HTMLElement>(null);
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pauseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const currentRole = roles[roleIndex];
-    const speed = isDeleting ? 50 : 100;
 
-    typingRef.current = setTimeout(() => {
-      if (!isDeleting) {
-        setDisplayText(currentRole.slice(0, displayText.length + 1));
-        if (displayText.length + 1 === currentRole.length) {
-          setTimeout(() => setIsDeleting(true), 2000);
-        }
+    if (typingRef.current) clearTimeout(typingRef.current);
+    if (pauseRef.current) clearTimeout(pauseRef.current);
+
+    if (!isDeleting) {
+      if (displayText.length < currentRole.length) {
+        typingRef.current = setTimeout(() => {
+          setDisplayText(currentRole.slice(0, displayText.length + 1));
+        }, 100);
       } else {
-        setDisplayText(currentRole.slice(0, displayText.length - 1));
-        if (displayText.length === 0) {
-          setIsDeleting(false);
-          setRoleIndex((prev) => (prev + 1) % roles.length);
-        }
+        pauseRef.current = setTimeout(() => {
+          setIsDeleting(true);
+        }, 2000);
       }
-    }, speed);
+    } else {
+      if (displayText.length > 0) {
+        typingRef.current = setTimeout(() => {
+          setDisplayText(currentRole.slice(0, displayText.length - 1));
+        }, 50);
+      } else {
+        setIsDeleting(false);
+        setRoleIndex((prev) => (prev + 1) % roles.length);
+      }
+    }
 
     return () => {
       if (typingRef.current) clearTimeout(typingRef.current);
+      if (pauseRef.current) clearTimeout(pauseRef.current);
     };
   }, [displayText, isDeleting, roleIndex]);
 
